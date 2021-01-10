@@ -37,7 +37,7 @@ length(unique(data$EVTYPE))
 
 ### Effects on Population Health
 **Fatalities**  
-First, we take a look at what types of events caused the most fatalities.
+First, we want to find out what types of events caused the most fatalities. To do this, we create a vector containing all the different types of events ranked by the number of fatalities they caused.
 ```{r}
 fatal <- sort(with(data, tapply(FATALITIES, EVTYPE, sum)), decreasing=T)
 sum(fatal)
@@ -48,7 +48,7 @@ summary(fatal)
 We can see that there are a total of 15,145 fatalities recorded. Out of the 985 different types of events only 168 caused any fatalities. We can also see that only 42 different types of events (upper quadrant) caused more than 19 fatalities.  
   
 **Injuries**  
-Next, we take a look at what types of events caused the most injuries.
+Next, we take a look at what types of events caused the most injuries. Again, we create a vector containing all the different types of events ranked by the number of injuries they caused.
 ```{r}
 injur <- sort(with(data, tapply(INJURIES, EVTYPE, sum)), decreasing=T)
 sum(injur)
@@ -58,6 +58,7 @@ summary(injur)
 ```
 Here we can see that there are a total of 140,528 injuries recorded. Interestingly, out of the 985 different types of events only 158 caused any injuries which is less than the types of events that caused fatalities. In this case, we can see that 25 % of those 158 different types of events caused more than 78 injuries.  
   
+**Result**  
 Let's combine these findings in order to determine which types of events are most harmful with respect to population health.
 ```{r}
 harmfulevents <- unique(c(names(fatal[1:10]), names(injur[1:10])))
