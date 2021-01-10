@@ -1,0 +1,52 @@
+---
+title: "AdditionalAnalysis"
+author: "d-muenter"
+output: html_document
+---
+
+Because there are 985 different types of events in the data, we only look at those events that make up the majority of all the observations.  
+We can see that only 30 different types of events make up almost 99 % of all the observations.
+```{r}
+## Find number of different types of events
+length(unique(data$EVTYPE))
+## Turn event variable into a factor variable
+data$EVTYPE <- as.factor(data$EVTYPE)
+## Reorder that variable by the frequency of each factor level
+data$EVTYPE <- reorder(data$EVTYPE, data$EVTYPE, length)
+## Look at the 30 most frequent event types
+tail(table(data$EVTYPE), n=40)
+sum(tail(table(data$EVTYPE), n=40)) / length(data$EVTYPE)
+## Create a new smaller dataset with only the 30 most frequent event types
+smalldata <- data[data$EVTYPE %in% names(tail(table(data$EVTYPE), n=40)),]
+```
+To make sure that by taking only the 40 most frequent types of events, we don't miss any relevant events which only occured a few times but caused significant health or economic effects, we take a look at which single events caused the most fatalities, injuries, property damage and crop damage.
+```{r}
+## What were the most fatalities in any of the recorded events?
+mostfatalities <- head(sort(data$FATALITIES, decreasing=T), n=10)
+mostfatalities
+## To which type of event do these events correspond?
+fatalityevents <- data$EVTYPE[data$FATALITIES %in% mostfatalities]
+fatalityevents
+## Are these types in our 40 selected types of events?
+fatalityevents %in% smalldata$EVTYPE
+```
+
+
+
+```{r}
+library(ggplot2)
+fatal_plot <- ggplot(healthdata, aes(EVTYPE, FATALITIES)) + 
+    geom_col(aes(fill=EVTYPE)) + guides(fill=FALSE) + 
+    theme(axis.text.x=element_text(angle=45, hjust=1)) + 
+    labs(x="Event Type", y="Fatalities")
+injur_plot <- ggplot(healthdata, aes(EVTYPE, INJURIES)) + 
+    geom_col(aes(fill=EVTYPE)) + guides(fill=FALSE) + 
+    theme(axis.text.x=element_text(angle=45, hjust=1)) + 
+    labs(x="Event Type", "Injuries")
+library("gridExtra")
+grid.arrange(fatal_plot, injur_plot, nrow=2)
+
+
+ggplot(healthdata) + geom_col(aes(EVTYPE, FATALITIES)) + geom_col(aes(EVTYPE, INJURIES)) + theme(axis.text.x=element_text(angle=45, hjust=1)) + scale_y_continuous(sec.axis=sec_axis(trans=~.*1))
+```
+

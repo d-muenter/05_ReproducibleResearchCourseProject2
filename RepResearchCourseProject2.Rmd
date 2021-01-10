@@ -1,29 +1,88 @@
 ---
-title: "RepResearchCourseProject2"
+title: "Severe Weather Events and its Effects on Population Health and the Economy"
 author: "d-muenter"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+## Synopsis
+
+In this report we aim to describe which types of severe weather events are most harmful with respect to population health and which have the greatest economic consequences to allow for better allocation of resources for different types of events. To investigate these questions, we obtained data from the U.S. National Oceanic and Atmospheric Administration's (NOAA) storm database which tracks characteristics of major storms and weather events in the Unites States, including when and where they occur, as well as estimates of any fatalities, injuries, and property damage.
+
+## Data Processing
+
+The data was downloaded from https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2 where it came in the form of a csv file compressed via the bzip2 algorithm. We then read in that data.
+```{r, cache=TRUE}
+stormdata <- read.csv("repdata_data_StormData.csv.bz2")
+```
+When looking at the structure of the dataset, we can see that there are 902,297 observations of 37 variables.
+```{r}
+str(stormdata)
+```
+To make working with this large dataset easier, we extract only those columns that are relevant to the questions we are trying to answer. Those questions are which **types of events** are most harmful to **population health** and have the greatest **economic consequences**.  
+Therefore, we include the EVTYPE, FATALITIES, INJURIES, PROPDMG, PROPDMGEXP, CROPDMG and CROPDMGEXP columns in our new dataset. We also include the STATE, BGN_DATE and BGN_TIME columns in case we need them for our analysis.
+```{r}
+data <- stormdata[,c(2:3,7:8,23:28)]
 ```
 
-## R Markdown
+## Results
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+Because missing values can often be a problem when analyzing data, we check for missing values and see that there are none.
+```{r}
+mean(is.na(data))
+```
+Because there are 985 different event types we need to look at the different variables to see which of these types of events have a considerable effect on health and economic parameters.
+```{r}
+length(unique(data$EVTYPE))
 ```
 
-## Including Plots
+### Effects on Population Health
+**Fatalities**  
+First, we take a look at what types of events caused the most fatalities.
+```{r}
+fatal <- sort(with(data, tapply(FATALITIES, EVTYPE, sum)), decreasing=T)
+sum(fatal)
+length(fatal[fatal!=0])
+fatal <- fatal[fatal!=0]  ## ignore types of events that didn't cause any fatalities
+summary(fatal)
+```
+We can see that there are a total of 15,145 fatalities recorded. Out of the 985 different types of events only 168 caused any fatalities. We can also see that only 42 different types of events (upper quadrant) caused more than 19 fatalities.  
+  
+**Injuries**  
+Next, we take a look at what types of events caused the most injuries.
+```{r}
+injur <- sort(with(data, tapply(INJURIES, EVTYPE, sum)), decreasing=T)
+sum(injur)
+length(injur[injur!=0])
+injur <- injur[injur!=0]  ## ignore types of events that didn't cause any injuries
+summary(injur)
+```
+Here we can see that there are a total of 140,528 injuries recorded. Interestingly, out of the 985 different types of events only 158 caused any injuries which is less than the types of events that caused fatalities. In this case, we can see that 25 % of those 158 different types of events caused more than 78 injuries.  
+  
+Let's combine these findings in order to determine which types of events are most harmful with respect to population health.
+```{r}
+harmfulevents <- unique(c(names(fatal[1:10]), names(injur[1:10])))
+healthdata <- data[data$EVTYPE %in% harmfulevents,]
+nrow(healthdata) / nrow(data)
+```
+We created a dataset including only 13 different types of events which were either in the "top 10" for fatalities or in the "top 10" for injuries or (for most of them) were in both of these "top 10". We can also see that more than 85 % of all observations belong to these 13 types of events.
+```{r, chache=TRUE, fig.height=8}
+library(ggplot2)
+fatal_plot <- ggplot(healthdata, aes(EVTYPE, FATALITIES)) + 
+    geom_col(aes(fill=EVTYPE)) + guides(fill=FALSE) + 
+    theme(axis.text.x=element_text(angle=45, hjust=1)) + 
+    labs(x=NULL, y="Fatalities")
+injur_plot <- ggplot(healthdata, aes(EVTYPE, INJURIES)) + 
+    geom_col(aes(fill=EVTYPE)) + guides(fill=FALSE) + 
+    theme(axis.text.x=element_text(angle=45, hjust=1)) + 
+    labs(x="Event Type", y="Injuries")
+library("gridExtra")
+grid.arrange(fatal_plot, injur_plot, nrow=2)
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Here we can see that tornados are the major cause for fatalities and injuries. Especially when looking at events that cause a lot of fatalities, excessive heat and heat, flash floods and lightning seem to be the types of severe weather events (apart from tornados) that cause the biggest threat to the population.
+
+## Economic Consequences
+
+
+
